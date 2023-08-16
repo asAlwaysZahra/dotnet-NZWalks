@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NZWalks.API.Models.Domain;
 
 namespace NZWalks.API.Data
 {
@@ -6,6 +7,8 @@ namespace NZWalks.API.Data
     {
         public DataContext(DbContextOptions options) : base(options) {}
 
-        public int MyProperty { get; set; }
+        public DbSet<Difficulty> Difficulties { get; set; }
+        public DbSet<Region> Regions { get; set; }
+        public DbSet<Walk> Walks { get; set; }
     }
 }
