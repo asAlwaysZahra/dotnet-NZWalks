@@ -118,7 +118,10 @@ namespace NZWalks.API.Controllers
                 return NotFound();
             }
 
-            return Ok(region);
+            context.Regions.Remove(region);
+            context.SaveChanges();
+
+            return Ok();
         }
     }
 }
