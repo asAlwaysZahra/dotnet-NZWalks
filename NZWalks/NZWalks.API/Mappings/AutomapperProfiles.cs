@@ -13,6 +13,7 @@ namespace NZWalks.API.Mappings
             CreateMap<UpdateRegionDto, Region>();
             CreateMap<AddWalkDto, Walk>();
             CreateMap<Walk, WalkDto>();
+            CreateMap<Difficulty, DifficultyDto>();
         }
     }
 }
