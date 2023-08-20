@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NZWalks.API.Data;
 using NZWalks.API.Models.Domain;
@@ -12,72 +13,40 @@ namespace NZWalks.API.Controllers
     public class RegionsController : ControllerBase
     {
         private readonly IRegionRepository regionRepository;
+        private readonly IMapper mapper;
 
-        public RegionsController(IRegionRepository regionRepository)
+        public RegionsController(IRegionRepository regionRepository, IMapper mapper)
         {
             this.regionRepository = regionRepository;
+            this.mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            List<Region> regionsDomain = await regionRepository.GetAllAsync();
-            List<RegionDto> regionsDto = new List<RegionDto>();
-            foreach (Region region in regionsDomain)
-            {
-                regionsDto.Add(new RegionDto
-                {
-                    Id = region.Id,
-                    Code = region.Code,
-                    Name = region.Name,
-                    ImageUrl = region.ImageUrl
-                });
-            }
-
-            return Ok(regionsDto);
+            List<Region> regionsModel = await regionRepository.GetAllAsync();
+            return Ok(mapper.Map<List<RegionDto>>(regionsModel));
         }
 
         [HttpGet("{id:Guid}")]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
-            Region regionDomain = await regionRepository.GetByIdAsync(id);
+            Region regionModel = await regionRepository.GetByIdAsync(id);
 
-            if (regionDomain == null)
+            if (regionModel == null)
             {
                 return NotFound();
             }
 
-            RegionDto regionDto = new RegionDto
-            {
-                Id = regionDomain.Id,
-                Code = regionDomain.Code,
-                Name = regionDomain.Name,
-                ImageUrl = regionDomain.ImageUrl
-            };
-
-            return Ok(regionDto);
+            return Ok(mapper.Map<RegionDto>(regionModel));
         }
-
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] AddRegionDto request)
         {
-            Region region = new Region
-            {
-                Code = request.Code,
-                Name = request.Name,
-                ImageUrl = request.ImageUrl
-            };
+            Region regionModel = await regionRepository.CreateAsync(mapper.Map<Region>(request));
 
-            region = await regionRepository.CreateAsync(region);
-
-            RegionDto regionDto = new RegionDto
-            {
-                Id = region.Id,
-                Code = region.Code,
-                Name = region.Name,
-                ImageUrl = region.ImageUrl
-            };
+            RegionDto regionDto = mapper.Map<RegionDto>(regionModel);
 
             return CreatedAtAction(nameof(GetById), new { id = regionDto.Id }, regionDto);
         }
@@ -85,12 +54,7 @@ namespace NZWalks.API.Controllers
         [HttpPut("{id:Guid}")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateRegionDto request)
         {
-            Region regionModel = new Region
-            {
-                Code = request.Code,
-                Name = request.Name,
-                ImageUrl = request.ImageUrl
-            };
+            Region regionModel = mapper.Map<Region>(request);
 
             regionModel = await regionRepository.UpdateAsync(id, regionModel);
 
@@ -99,15 +63,7 @@ namespace NZWalks.API.Controllers
                 return NotFound();
             }
 
-            RegionDto regionDto = new RegionDto
-            {
-                Id = regionModel.Id,
-                Code = regionModel.Code,
-                Name = regionModel.Name,
-                ImageUrl = regionModel.ImageUrl
-            };
-
-            return Ok(regionDto);
+            return Ok(mapper.Map<RegionDto>(regionModel));
         }
 
         [HttpDelete("{id:Guid}")]
