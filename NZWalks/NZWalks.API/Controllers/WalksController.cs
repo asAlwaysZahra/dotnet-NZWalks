@@ -32,9 +32,9 @@ namespace NZWalks.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? filterOn, [FromQuery] string? filterQuery)
         {
-            List<Walk> walksModel = await walkRepository.GetAllAsync();
+            List<Walk> walksModel = await walkRepository.GetAllAsync(filterOn, filterQuery);
             return Ok(mapper.Map<List<WalkDto>>(walksModel));
         }
 
