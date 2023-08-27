@@ -10,35 +10,45 @@ namespace NZWalks.API.Controllers
     public class ImagesController : ControllerBase
     {
         private readonly IImageRepository imageRepository;
+        private readonly ILogger<ImagesController> logger;
 
-        public ImagesController(IImageRepository imageRepository)
+        public ImagesController(IImageRepository imageRepository, ILogger<ImagesController> logger)
         {
             this.imageRepository = imageRepository;
+            this.logger = logger;
         }
 
         [HttpPost("Upload")]
         public async Task<IActionResult> Upload([FromForm] ImageUploadDto request)
         {
-            validateFileUpload(request);
-
-            if (ModelState.IsValid)
+            try
             {
-                Image imageModel = new Image
+                validateFileUpload(request);
+
+                if (ModelState.IsValid)
                 {
-                    File = request.File,
-                    FileExtension = Path.GetExtension(request.File.FileName),
-                    FileSizeInBytes = request.File.Length,
-                    FileName = request.FileName,
-                    FileDescription = request.FileDescription
-                };
+                    Image imageModel = new Image
+                    {
+                        File = request.File,
+                        FileExtension = Path.GetExtension(request.File.FileName),
+                        FileSizeInBytes = request.File.Length,
+                        FileName = request.FileName,
+                        FileDescription = request.FileDescription
+                    };
 
-                // use repository to upload image
-                await imageRepository.Upload(imageModel);
+                    // use repository to upload image
+                    await imageRepository.Upload(imageModel);
 
-                return Ok(imageModel);
+                    return Ok(imageModel);
+                }
+
+                return BadRequest(ModelState);
             }
-
-            return BadRequest(ModelState);
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                return BadRequest();
+            }
         }
 
         private void validateFileUpload(ImageUploadDto request)

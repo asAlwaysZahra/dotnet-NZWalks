@@ -15,11 +15,13 @@ namespace NZWalks.API.Controllers
     {
         private readonly IWalkRepository walkRepository;
         private readonly IMapper mapper;
+        private readonly ILogger<WalksController> logger;
 
-        public WalksController(IWalkRepository walkRepository, IMapper mapper)
+        public WalksController(IWalkRepository walkRepository, IMapper mapper, ILogger<WalksController> logger)
         {
             this.walkRepository = walkRepository;
             this.mapper = mapper;
+            this.logger = logger;
         }
 
         [HttpPost]
@@ -27,11 +29,19 @@ namespace NZWalks.API.Controllers
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Craete([FromBody] AddWalkDto request)
         {
-            Walk walkModel = mapper.Map<Walk>(request);
+            try
+            {
+                Walk walkModel = mapper.Map<Walk>(request);
 
-            await walkRepository.CreateAsync(walkModel);
+                await walkRepository.CreateAsync(walkModel);
 
-            return Ok(mapper.Map<WalkDto>(walkModel));
+                return Ok(mapper.Map<WalkDto>(walkModel));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                return BadRequest();
+            }
         }
 
         [HttpGet]
@@ -40,23 +50,40 @@ namespace NZWalks.API.Controllers
             [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
             [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 1000)
         {
-            List<Walk> walksModel = await walkRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true,
-                pageNumber, pageSize);
-            return Ok(mapper.Map<List<WalkDto>>(walksModel));
+            try
+            {
+                List<Walk> walksModel = await walkRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true,
+                    pageNumber, pageSize);
+
+                return Ok(mapper.Map<List<WalkDto>>(walksModel));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                return BadRequest();
+            }
         }
 
         [HttpGet("{id:Guid}")]
         [Authorize(Roles = "Reader,Writer")]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
-            Walk walkModel = await walkRepository.GetByIdAsync(id);
-
-            if (walkModel == null)
+            try
             {
-                return NotFound();
-            }
+                Walk walkModel = await walkRepository.GetByIdAsync(id);
 
-            return Ok(mapper.Map<WalkDto>(walkModel));
+                if (walkModel == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(mapper.Map<WalkDto>(walkModel));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                return BadRequest();
+            }
         }
 
         [HttpPut("{id:Guid}")]
@@ -64,30 +91,46 @@ namespace NZWalks.API.Controllers
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateWalkDto request)
         {
-            Walk walkModel = mapper.Map<Walk>(request);
-
-            walkModel = await walkRepository.UpdateAsync(id, walkModel);
-
-            if (walkModel == null)
+            try
             {
-                return NotFound();
-            }
+                Walk walkModel = mapper.Map<Walk>(request);
 
-            return Ok(mapper.Map<WalkDto>(walkModel));
+                walkModel = await walkRepository.UpdateAsync(id, walkModel);
+
+                if (walkModel == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(mapper.Map<WalkDto>(walkModel));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                return BadRequest();
+            }
         }
 
         [HttpDelete("{id:Guid}")]
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
-            Walk walkModel = await walkRepository.DeleteAsync(id);
-
-            if (walkModel == null)
+            try
             {
-                return NotFound();
-            }
+                Walk walkModel = await walkRepository.DeleteAsync(id);
 
-            return Ok();
+                if (walkModel == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                return BadRequest();
+            }
         }
     }
 }

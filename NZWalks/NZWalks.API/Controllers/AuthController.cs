@@ -11,71 +11,90 @@ namespace NZWalks.API.Controllers
     {
         private readonly UserManager<IdentityUser> userManager;
         private readonly ITokenRepository tokenRepository;
+        private readonly ILogger<AuthController> logger;
 
-        public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository)
+        public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository,
+            ILogger<AuthController> logger)
         {
             this.userManager = userManager;
             this.tokenRepository = tokenRepository;
+            this.logger = logger;
         }
 
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserDto request)
         {
-            var identityUser = new IdentityUser
+            try
             {
-                UserName = request.Username,
-                Email = request.Username
-            };
-
-            var identityResult = await userManager.CreateAsync(identityUser, request.Password);
-
-            if (identityResult.Succeeded)
-            {
-                // add roles to user
-                if (request.Roles != null && request.Roles.Any())
+                var identityUser = new IdentityUser
                 {
-                    identityResult = await userManager.AddToRolesAsync(identityUser, request.Roles);
+                    UserName = request.Username,
+                    Email = request.Username
+                };
 
-                    if (identityResult.Succeeded)
+                var identityResult = await userManager.CreateAsync(identityUser, request.Password);
+
+                if (identityResult.Succeeded)
+                {
+                    // add roles to user
+                    if (request.Roles != null && request.Roles.Any())
                     {
-                        return Ok("User registered successfully! Please login.");
+                        identityResult = await userManager.AddToRolesAsync(identityUser, request.Roles);
+
+                        if (identityResult.Succeeded)
+                        {
+                            return Ok("User registered successfully! Please login.");
+                        }
                     }
                 }
-            }
 
-            return BadRequest("There is a problem in your request, idk what!");
+                return BadRequest("There is a problem in your request, idk what!");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                return BadRequest();
+            }
         }
 
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginUserDto request)
         {
-            var user = await userManager.FindByEmailAsync(request.Username);
-
-            if (user != null)
+            try
             {
-                var checkPassword = await userManager.CheckPasswordAsync(user, request.Password);
+                var user = await userManager.FindByEmailAsync(request.Username);
 
-                if (checkPassword)
+                if (user != null)
                 {
-                    // get roles
-                    var roles = await userManager.GetRolesAsync(user);
+                    var checkPassword = await userManager.CheckPasswordAsync(user, request.Password);
 
-                    if (roles != null)
+                    if (checkPassword)
                     {
-                        // create token
-                        string token = tokenRepository.CreateJwtToken(user, roles.ToList());
+                        // get roles
+                        var roles = await userManager.GetRolesAsync(user);
 
-                        var response = new LoginResponseDto
+                        if (roles != null)
                         {
-                            JwtToken = token,
-                        };
+                            // create token
+                            string token = tokenRepository.CreateJwtToken(user, roles.ToList());
 
-                        return Ok(response);
+                            var response = new LoginResponseDto
+                            {
+                                JwtToken = token,
+                            };
+
+                            return Ok(response);
+                        }
                     }
                 }
-            }
 
-            return BadRequest("Username or password wrong.");
+                return BadRequest("Username or password wrong.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                return BadRequest();
+            }
         }
     }
 }
