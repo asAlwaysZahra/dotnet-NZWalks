@@ -24,77 +24,64 @@ namespace NZWalks.API.Controllers
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserDto request)
         {
-            try
+
+            var identityUser = new IdentityUser
             {
-                var identityUser = new IdentityUser
-                {
-                    UserName = request.Username,
-                    Email = request.Username
-                };
+                UserName = request.Username,
+                Email = request.Username
+            };
 
-                var identityResult = await userManager.CreateAsync(identityUser, request.Password);
+            var identityResult = await userManager.CreateAsync(identityUser, request.Password);
 
-                if (identityResult.Succeeded)
+            if (identityResult.Succeeded)
+            {
+                // add roles to user
+                if (request.Roles != null && request.Roles.Any())
                 {
-                    // add roles to user
-                    if (request.Roles != null && request.Roles.Any())
+                    identityResult = await userManager.AddToRolesAsync(identityUser, request.Roles);
+
+                    if (identityResult.Succeeded)
                     {
-                        identityResult = await userManager.AddToRolesAsync(identityUser, request.Roles);
-
-                        if (identityResult.Succeeded)
-                        {
-                            return Ok("User registered successfully! Please login.");
-                        }
+                        return Ok("User registered successfully! Please login.");
                     }
                 }
+            }
 
-                return BadRequest("There is a problem in your request, idk what!");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+            return BadRequest("There is a problem in your request, idk what!");
+
         }
 
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginUserDto request)
         {
-            try
+            var user = await userManager.FindByEmailAsync(request.Username);
+
+            if (user != null)
             {
-                var user = await userManager.FindByEmailAsync(request.Username);
+                var checkPassword = await userManager.CheckPasswordAsync(user, request.Password);
 
-                if (user != null)
+                if (checkPassword)
                 {
-                    var checkPassword = await userManager.CheckPasswordAsync(user, request.Password);
+                    // get roles
+                    var roles = await userManager.GetRolesAsync(user);
 
-                    if (checkPassword)
+                    if (roles != null)
                     {
-                        // get roles
-                        var roles = await userManager.GetRolesAsync(user);
+                        // create token
+                        string token = tokenRepository.CreateJwtToken(user, roles.ToList());
 
-                        if (roles != null)
+                        var response = new LoginResponseDto
                         {
-                            // create token
-                            string token = tokenRepository.CreateJwtToken(user, roles.ToList());
+                            JwtToken = token,
+                        };
 
-                            var response = new LoginResponseDto
-                            {
-                                JwtToken = token,
-                            };
-
-                            return Ok(response);
-                        }
+                        return Ok(response);
                     }
                 }
+            }
 
-                return BadRequest("Username or password wrong.");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+            return BadRequest("Username or password wrong.");
+
         }
     }
 }

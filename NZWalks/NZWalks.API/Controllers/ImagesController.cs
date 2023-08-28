@@ -21,34 +21,26 @@ namespace NZWalks.API.Controllers
         [HttpPost("Upload")]
         public async Task<IActionResult> Upload([FromForm] ImageUploadDto request)
         {
-            try
-            {
-                validateFileUpload(request);
+            validateFileUpload(request);
 
-                if (ModelState.IsValid)
+            if (ModelState.IsValid)
+            {
+                Image imageModel = new Image
                 {
-                    Image imageModel = new Image
-                    {
-                        File = request.File,
-                        FileExtension = Path.GetExtension(request.File.FileName),
-                        FileSizeInBytes = request.File.Length,
-                        FileName = request.FileName,
-                        FileDescription = request.FileDescription
-                    };
+                    File = request.File,
+                    FileExtension = Path.GetExtension(request.File.FileName),
+                    FileSizeInBytes = request.File.Length,
+                    FileName = request.FileName,
+                    FileDescription = request.FileDescription
+                };
 
-                    // use repository to upload image
-                    await imageRepository.Upload(imageModel);
+                // use repository to upload image
+                await imageRepository.Upload(imageModel);
 
-                    return Ok(imageModel);
-                }
-
-                return BadRequest(ModelState);
+                return Ok(imageModel);
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+
+            return BadRequest(ModelState);
         }
 
         private void validateFileUpload(ImageUploadDto request)

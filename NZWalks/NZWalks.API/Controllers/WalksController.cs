@@ -29,19 +29,11 @@ namespace NZWalks.API.Controllers
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Craete([FromBody] AddWalkDto request)
         {
-            try
-            {
-                Walk walkModel = mapper.Map<Walk>(request);
+            Walk walkModel = mapper.Map<Walk>(request);
 
-                await walkRepository.CreateAsync(walkModel);
+            await walkRepository.CreateAsync(walkModel);
 
-                return Ok(mapper.Map<WalkDto>(walkModel));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+            return Ok(mapper.Map<WalkDto>(walkModel));
         }
 
         [HttpGet]
@@ -50,40 +42,24 @@ namespace NZWalks.API.Controllers
             [FromQuery] string? sortBy, [FromQuery] bool? isAscending,
             [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 1000)
         {
-            try
-            {
-                List<Walk> walksModel = await walkRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true,
-                    pageNumber, pageSize);
+            List<Walk> walksModel = await walkRepository.GetAllAsync(filterOn, filterQuery, sortBy, isAscending ?? true,
+                pageNumber, pageSize);
 
-                return Ok(mapper.Map<List<WalkDto>>(walksModel));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+            return Ok(mapper.Map<List<WalkDto>>(walksModel));
         }
 
         [HttpGet("{id:Guid}")]
         [Authorize(Roles = "Reader,Writer")]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
-            try
-            {
-                Walk walkModel = await walkRepository.GetByIdAsync(id);
+            Walk walkModel = await walkRepository.GetByIdAsync(id);
 
-                if (walkModel == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok(mapper.Map<WalkDto>(walkModel));
-            }
-            catch (Exception ex)
+            if (walkModel == null)
             {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
+                return NotFound();
             }
+
+            return Ok(mapper.Map<WalkDto>(walkModel));
         }
 
         [HttpPut("{id:Guid}")]
@@ -91,46 +67,30 @@ namespace NZWalks.API.Controllers
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateWalkDto request)
         {
-            try
+            Walk walkModel = mapper.Map<Walk>(request);
+
+            walkModel = await walkRepository.UpdateAsync(id, walkModel);
+
+            if (walkModel == null)
             {
-                Walk walkModel = mapper.Map<Walk>(request);
-
-                walkModel = await walkRepository.UpdateAsync(id, walkModel);
-
-                if (walkModel == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok(mapper.Map<WalkDto>(walkModel));
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+
+            return Ok(mapper.Map<WalkDto>(walkModel));
         }
 
         [HttpDelete("{id:Guid}")]
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
-            try
-            {
-                Walk walkModel = await walkRepository.DeleteAsync(id);
+            Walk walkModel = await walkRepository.DeleteAsync(id);
 
-                if (walkModel == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok();
-            }
-            catch (Exception ex)
+            if (walkModel == null)
             {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
+                return NotFound();
             }
+
+            return Ok();
         }
     }
 }

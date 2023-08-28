@@ -29,43 +29,27 @@ namespace NZWalks.API.Controllers
         [Authorize(Roles = "Reader,Writer")]
         public async Task<IActionResult> GetAll()
         {
-            try
-            {
-                logger.LogInformation("GetAll Regions Action Method Was Invoked");
+            logger.LogInformation("GetAll Regions Action Method Was Invoked");
 
-                List<Region> regionsModel = await regionRepository.GetAllAsync();
+            List<Region> regionsModel = await regionRepository.GetAllAsync();
 
-                logger.LogInformation($"Finished GetAll Regions Request with Data: {JsonSerializer.Serialize(regionsModel)}");
+            logger.LogInformation($"Finished GetAll Regions Request with Data: {JsonSerializer.Serialize(regionsModel)}");
 
-                return Ok(mapper.Map<List<RegionDto>>(regionsModel));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+            return Ok(mapper.Map<List<RegionDto>>(regionsModel));
         }
 
         [HttpGet("{id:Guid}")]
         [Authorize(Roles = "Reader,Writer")]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
-            try
-            {
-                Region regionModel = await regionRepository.GetByIdAsync(id);
+            Region regionModel = await regionRepository.GetByIdAsync(id);
 
-                if (regionModel == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok(mapper.Map<RegionDto>(regionModel));
-            }
-            catch (Exception ex)
+            if (regionModel == null)
             {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
+                return NotFound();
             }
+
+            return Ok(mapper.Map<RegionDto>(regionModel));
         }
 
         [HttpPost]
@@ -73,19 +57,11 @@ namespace NZWalks.API.Controllers
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Create([FromBody] AddRegionDto request)
         {
-            try
-            {
-                Region regionModel = await regionRepository.CreateAsync(mapper.Map<Region>(request));
+            Region regionModel = await regionRepository.CreateAsync(mapper.Map<Region>(request));
 
-                RegionDto regionDto = mapper.Map<RegionDto>(regionModel);
+            RegionDto regionDto = mapper.Map<RegionDto>(regionModel);
 
-                return CreatedAtAction(nameof(GetById), new { id = regionDto.Id }, regionDto);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+            return CreatedAtAction(nameof(GetById), new { id = regionDto.Id }, regionDto);
         }
 
         [HttpPut("{id:Guid}")]
@@ -93,46 +69,30 @@ namespace NZWalks.API.Controllers
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateRegionDto request)
         {
-            try
+            Region regionModel = mapper.Map<Region>(request);
+
+            regionModel = await regionRepository.UpdateAsync(id, regionModel);
+
+            if (regionModel == null)
             {
-                Region regionModel = mapper.Map<Region>(request);
-
-                regionModel = await regionRepository.UpdateAsync(id, regionModel);
-
-                if (regionModel == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok(mapper.Map<RegionDto>(regionModel));
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
-            }
+
+            return Ok(mapper.Map<RegionDto>(regionModel));
         }
 
         [HttpDelete("{id:Guid}")]
         [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
-            try
-            {
-                Region region = await regionRepository.DeleteAsync(id);
+            Region region = await regionRepository.DeleteAsync(id);
 
-                if (region == null)
-                {
-                    return NotFound();
-                }
-
-                return Ok();
-            }
-            catch (Exception ex)
+            if (region == null)
             {
-                logger.LogError(ex, ex.Message);
-                return BadRequest();
+                return NotFound();
             }
+
+            return Ok();
         }
     }
 }
